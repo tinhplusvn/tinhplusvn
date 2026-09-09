@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh Sách Thiếu Niên Nhi Đồng Bản Sấm</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+      .app-header {
+        background-color: #3f51b5;
+        color: #ffffff;
+        padding: 16px;
+        text-align: center;
+      }
+      .header-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .header-logo {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 8px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      .header-title {
+        font-size: 15px;
+        font-weight: bold;
+        margin: 0;
+        text-transform: uppercase;
+      }
+      .header-subtitle {
+        font-size: 14px;
+        font-weight: bold;
+        margin: 4px 0;
+        text-transform: uppercase;
+      }
+      .header-desc {
+        font-size: 13px;
+        opacity: 0.95;
+        margin: 2px 0 0 0;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+    </style>
+</head>
+<body class="bg-[#f7f6f0] min-h-screen pb-24 font-sans relative">
+
+  <header class="app-header">
+    <div class="header-content">
+      <img src="./logo.png" alt="Logo Đoàn" class="header-logo" onerror="this.style.display='none'">
+      <h1 class="header-title">ĐOÀN TNCS HỒ CHÍ MINH</h1>
+      <h2 class="header-subtitle">CHI ĐOÀN BẢN SẤM</h2>
+      <p class="header-desc">DANH SÁCH THIẾU NIÊN NHI ĐỒNG BẢN SẤM</p>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-3 sm:px-6 pt-4">
+
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
+          <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200/80 text-center">
+              <span class="text-[11px] text-slate-500 font-medium">Tổng số</span>
+              <p id="stat-total" class="text-lg font-bold text-slate-800">0</p>
+          </div>
+          <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200/80 text-center">
+              <span class="text-[11px] text-amber-600 font-medium">Mẫu Giáo (3 - 5)</span>
+              <p id="stat-mg" class="text-lg font-bold text-amber-600">0</p>
+          </div>
+          <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200/80 text-center">
+              <span class="text-[11px] text-emerald-600 font-medium">Tiểu Học (6 - 10)</span>
+              <p id="stat-th" class="text-lg font-bold text-emerald-600">0</p>
+          </div>
+          <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200/80 text-center">
+              <span class="text-[11px] text-blue-600 font-medium">THCS (11 - 15)</span>
+              <p id="stat-thcs" class="text-lg font-bold text-blue-600">0</p>
+          </div>
+          <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200/80 text-center col-span-2 sm:col-span-1">
+              <span class="text-[11px] text-slate-600 font-medium">Khác</span>
+              <p id="stat-other" class="text-lg font-bold text-slate-600">0</p>
+          </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 mb-4 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+              <div class="relative sm:col-span-1">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
+                  <input type="text" id="searchInput" oninput="renderTable()" placeholder="Tìm tên, phụ huynh, SĐT..." 
+                         class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              </div>
+
+              <div>
+                  <select id="filterGender" onchange="renderTable()" class="w-full py-2 px-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                      <option value="">-- Tất cả giới tính --</option>
+                      <option value="Nam">Nam</option>
+                      <option value="Nữ">Nữ</option>
+                  </select>
+              </div>
+
+              <div>
+                  <select id="filterBlock" onchange="renderTable()" class="w-full py-2 px-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                      <option value="">-- Tất cả khối học --</option>
+                      <option value="MG">Khối Mẫu Giáo (3 - 5 tuổi)</option>
+                      <option value="TH">Khối Tiểu Học (6 - 10 tuổi)</option>
+                      <option value="THCS">Khối THCS (11 - 15 tuổi)</option>
+                      <option value="KHAC">Khác</option>
+                  </select>
+              </div>
+
+              <div>
+                  <select id="filterAddress" onchange="renderTable()" class="w-full py-2 px-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                      <option value="">-- Tất cả thôn / địa chỉ --</option>
+                      <option value="Thôn Sấm 1">Thôn Sấm 1</option>
+                      <option value="Thôn Sấm 2">Thôn Sấm 2</option>
+                      <option value="Thôn Sấm 3">Thôn Sấm 3</option>
+                      <option value="Thôn Bãi Cả">Thôn Bãi Cả</option>
+                  </select>
+              </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-100 justify-between items-center">
+              <div class="flex flex-wrap gap-2">
+                  <label class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium px-3 py-1.5 rounded-xl text-xs cursor-pointer flex items-center gap-1 border border-indigo-200 transition">
+                      <i class="fa-solid fa-file-import"></i> Nhập từ Excel
+                      <input type="file" id="excelFileInput" accept=".xlsx, .xls" onchange="importExcel(event)" class="hidden">
+                  </label>
+                  <button onclick="exportExcel()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 border border-emerald-200 transition">
+                      <i class="fa-solid fa-file-excel"></i> Xuất Excel mẫu
+                  </button>
+              </div>
+              <button onclick="clearAllData()" class="text-rose-600 hover:text-rose-800 text-xs font-medium px-2 py-1 flex items-center gap-1">
+                  <i class="fa-solid fa-trash"></i> Xóa tất cả
+              </button>
+          </div>
+      </div>
+
+      <div id="studentCardContainer" class="space-y-3.5"></div>
+
+      <div id="emptyMessage" class="hidden p-8 text-center text-slate-400 bg-white rounded-2xl shadow-sm border border-slate-200/80">
+          <i class="fa-solid fa-inbox text-4xl mb-2"></i>
+          <p>Chưa có dữ liệu học sinh nào.</p>
+      </div>
+  </main>
+
+  <button id="scrollToTopBtn" 
+          onclick="scrollToTop()" 
+          title="Cuộn lên đầu trang" 
+          class="fixed bottom-24 right-6 w-12 h-12 bg-slate-800/80 hover:bg-slate-800 active:scale-95 text-white rounded-full shadow-md flex items-center justify-center text-lg z-40 opacity-0 pointer-events-none transition-all duration-300">
+      <i class="fa-solid fa-arrow-up"></i>
+  </button>
+
+  <button onclick="openModal()" 
+          title="Thêm mới" 
+          class="fixed bottom-6 right-6 w-14 h-14 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-full shadow-lg hover:shadow-xl flex items-center justify-center text-2xl z-40 transition-all duration-200">
+      <i class="fa-solid fa-plus"></i>
+  </button>
+
+  <div id="studentModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
+          <div class="bg-indigo-700 text-white px-5 py-3 flex justify-between items-center">
+              <h3 id="modalTitle" class="font-bold text-base">Thêm Mới Thiếu Niên Nhi Đồng</h3>
+              <button onclick="closeModal()" class="text-indigo-200 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <form id="studentForm" onsubmit="saveStudent(event)" class="p-5 overflow-y-auto space-y-4 text-sm">
+              <input type="hidden" id="studentId">
+
+              <div>
+                  <label class="block font-medium text-slate-700 mb-1">Họ và tên <span class="text-red-500">*</span></label>
+                  <input type="text" id="fullName" required class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                  <div>
+                      <label class="block font-medium text-slate-700 mb-1">Ngày sinh <span class="text-red-500">*</span></label>
+                      <input type="date" id="birthDate" required class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                  </div>
+                  <div>
+                      <label class="block font-medium text-slate-700 mb-1">Giới tính</label>
+                      <select id="gender" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                          <option value="Nam">Nam</option>
+                          <option value="Nữ">Nữ</option>
+                      </select>
+                  </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                  <div>
+                      <label class="block font-medium text-slate-700 mb-1">Địa chỉ</label>
+                      <select id="address" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                          <option value="Thôn Sấm 1">Thôn Sấm 1</option>
+                          <option value="Thôn Sấm 2">Thôn Sấm 2</option>
+                          <option value="Thôn Sấm 3">Thôn Sấm 3</option>
+                          <option value="Thôn Bãi Cả">Thôn Bãi Cả</option>
+                      </select>
+                  </div>
+                  <div>
+                      <label class="block font-medium text-slate-700 mb-1">Lớp học</label>
+                      <input type="text" id="className" placeholder="Ví dụ: 1A, 6B, Mẫu giáo..." class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                  </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                  <div>
+                      <label class="block font-medium text-slate-700 mb-1">Họ tên Bố</label>
+                      <input type="text" id="fatherName" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                  </div>
+                  <div>
+                      <label class="block font-medium text-slate-700 mb-1">Họ tên Mẹ</label>
+                      <input type="text" id="motherName" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                  </div>
+              </div>
+
+              <div>
+                  <label class="block font-medium text-slate-700 mb-1">SĐT PH</label>
+                  <input type="tel" id="parentPhone" placeholder="037..." class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              </div>
+
+              <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-300 rounded-xl text-slate-600 hover:bg-slate-50 font-medium">Hủy</button>
+                  <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium shadow">Lưu lại</button>
+              </div>
+          </form>
+      </div>
+  </div>
+
+  <script>
+      let students = JSON.parse(localStorage.getItem('TNND_BANSAM_DATA')) || [];
+      const DEFAULT_EXCEL_FILE = './data.xlsx'; 
+
+      document.addEventListener('DOMContentLoaded', async () => {
+          if (students.length === 0) {
+              await autoLoadDefaultExcel();
+          } else {
+              renderTable();
+          }
+
+          const topBtn = document.getElementById('scrollToTopBtn');
+          window.addEventListener('scroll', () => {
+              if (window.scrollY > 200) {
+                  topBtn.classList.remove('opacity-0', 'pointer-events-none');
+                  topBtn.classList.add('opacity-100');
+              } else {
+                  topBtn.classList.remove('opacity-100');
+                  topBtn.classList.add('opacity-0', 'pointer-events-none');
+              }
+          });
+      });
+
+      async function autoLoadDefaultExcel() {
+          try {
+              const response = await fetch(DEFAULT_EXCEL_FILE);
+              if (!response.ok) return;
+
+              const arrayBuffer = await response.arrayBuffer();
+              const data = new Uint8Array(arrayBuffer);
+              const workbook = XLSX.read(data, { type: 'array' });
+              
+              parseAndSaveExcelData(workbook);
+          } catch (error) {
+              console.log("Chưa tìm thấy file data.xlsx mặc định.");
+          }
+      }
+
+      function parseAndSaveExcelData(workbook) {
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          let importedStudents = [];
+          let startRow = -1;
+
+          for (let r = 0; r < json.length; r++) {
+              const row = json[r];
+              if (row && row.some(cell => String(cell).includes('Họ và tên') || String(cell).includes('STT'))) {
+                  startRow = r + 1;
+                  break;
+              }
+          }
+
+          if (startRow === -1) startRow = 0;
+
+          for (let i = startRow; i < json.length; i++) {
+              const row = json[i];
+              if (!row || !row[1]) continue;
+
+              let rawDate = row[2];
+              let formattedDate = parseExcelDate(rawDate);
+
+              importedStudents.push({
+                  id: 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                  fullName: String(row[1] || '').trim(),
+                  birthDate: formattedDate,
+                  gender: String(row[3] || 'Nam').trim(),
+                  address: normalizeAddress(row[4]),
+                  className: String(row[5] || '').trim(),
+                  fatherName: String(row[6] || '').trim(),
+                  motherName: String(row[7] || '').trim(),
+                  parentPhone: String(row[8] || '').trim()
+              });
+          }
+
+          if (importedStudents.length > 0) {
+              students = importedStudents;
+              saveDataToStorage();
+              renderTable();
+          }
+      }
+
+      function scrollToTop() {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function calculateAge(birthDateStr) {
+          if (!birthDateStr) return 0;
+          const parts = birthDateStr.split('-');
+          if (parts.length < 1) return 0;
+          const birthYear = parseInt(parts[0], 10);
+          if (isNaN(birthYear)) return 0;
+          const currentYear = new Date().getFullYear();
+          const age = currentYear - birthYear;
+          return age < 0 ? 0 : age;
+      }
+
+      function getSchoolBlock(age, className) {
+          const cls = (className || '').toUpperCase().trim();
+
+          if (/^(6|7|8|9)/.test(cls)) return { name: "THCS", code: "THCS", bg: "bg-[#38629b] text-white" };
+          if (/^(1|2|3|4|5)/.test(cls)) return { name: "Tiểu Học", code: "TH", bg: "bg-[#2b8a3e] text-white" };
+          if (/mẫu giáo|mầm non|mg|mn/i.test(cls)) return { name: "Mẫu Giáo", code: "MG", bg: "bg-[#e67e22] text-white" };
+
+          if (age >= 11 && age <= 15) return { name: "THCS", code: "THCS", bg: "bg-[#38629b] text-white" };
+          if (age >= 6 && age <= 10) return { name: "Tiểu Học", code: "TH", bg: "bg-[#2b8a3e] text-white" };
+          if (age >= 3 && age <= 5) return { name: "Mẫu Giáo", code: "MG", bg: "bg-[#e67e22] text-white" };
+
+          return { name: "Khác", code: "KHAC", bg: "bg-slate-600 text-white" };
+      }
+
+      function formatDateDisplay(dateStr) {
+          if (!dateStr) return '';
+          const parts = dateStr.split('-');
+          if (parts.length === 3) return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+          return dateStr;
+      }
+
+      function getFilteredStudents() {
+          const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+          const filterGenderVal = document.getElementById('filterGender').value;
+          const filterBlockVal = document.getElementById('filterBlock').value;
+          const filterAddressVal = document.getElementById('filterAddress').value;
+
+          let filtered = students.filter(s => {
+              const age = calculateAge(s.birthDate);
+              const blockInfo = getSchoolBlock(age, s.className);
+              const matchSearch = (s.fullName || '').toLowerCase().includes(searchVal) ||
+                                  (s.fatherName || '').toLowerCase().includes(searchVal) ||
+                                  (s.motherName || '').toLowerCase().includes(searchVal) ||
+                                  (s.parentPhone || '').includes(searchVal);
+              const matchGender = !filterGenderVal || (s.gender || 'Nam').toLowerCase() === filterGenderVal.toLowerCase();
+              const matchBlock = !filterBlockVal || blockInfo.code === filterBlockVal;
+              const matchAddress = !filterAddressVal || (s.address || '').toLowerCase() === filterAddressVal.toLowerCase();
+
+              return matchSearch && matchGender && matchBlock && matchAddress;
+          });
+
+          filtered.sort((a, b) => {
+              const dateA = a.birthDate || '9999-12-31';
+              const dateB = b.birthDate || '9999-12-31';
+              return dateA.localeCompare(dateB);
+          });
+
+          return filtered;
+      }
+
+      function renderTable() {
+          const container = document.getElementById('studentCardContainer');
+          const emptyMsg = document.getElementById('emptyMessage');
+          
+          container.innerHTML = '';
+          const filtered = getFilteredStudents();
+          updateStats(filtered);
+
+          if (filtered.length === 0) {
+              emptyMsg.classList.remove('hidden');
+              return;
+          } else {
+              emptyMsg.classList.add('hidden');
+          }
+
+          filtered.forEach((item, index) => {
+              const age = calculateAge(item.birthDate);
+              const block = getSchoolBlock(age, item.className);
+              
+              const card = document.createElement('div');
+              card.className = "bg-white p-4 rounded-3xl border border-slate-200/70 shadow-sm relative text-slate-700";
+
+              card.innerHTML = `
+                  <div class="flex items-start gap-3">
+                      <div class="w-10 h-10 rounded-2xl bg-[#f2ebd9] flex items-center justify-center font-bold text-slate-800 text-lg flex-shrink-0">
+                          ${index + 1}
+                      </div>
+
+                      <div class="flex-1 min-w-0">
+                          <div class="flex justify-between items-start gap-2">
+                              <h3 class="text-xl font-bold text-slate-900 leading-snug truncate">${item.fullName || ''}</h3>
+                              <span class="px-3 py-1 text-xs font-medium rounded-full ${block.bg} flex-shrink-0">
+                                  ${block.name}
+                              </span>
+                          </div>
+
+                          <div class="text-slate-500 text-sm mt-1 flex flex-wrap gap-x-2 items-center">
+                              <span>${item.gender || 'Nam'}</span>
+                              <span>•</span>
+                              <span>${age} tuổi</span>
+                              <span>•</span>
+                              <span>${formatDateDisplay(item.birthDate)}</span>
+                              ${item.className ? `<span>•</span><span>Lớp ${item.className}</span>` : ''}
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 mt-3 text-slate-800 text-sm">
+                              <div><span class="text-slate-500">Bố:</span> ${item.fatherName || '-'}</div>
+                              <div><span class="text-slate-500">Mẹ:</span> ${item.motherName || '-'}</div>
+                          </div>
+
+                          <div class="flex flex-wrap items-center gap-x-6 gap-y-1 mt-2.5 text-sm text-slate-600">
+                              <div class="flex items-center gap-1.5 font-medium">
+                                  <i class="fa-solid fa-phone text-slate-700 text-xs"></i>
+                                  <span>${item.parentPhone || '-'}</span>
+                              </div>
+                              <div class="flex items-center gap-1.5 text-slate-500">
+                                  <i class="fa-solid fa-location-dot text-rose-500 text-xs"></i>
+                                  <span>${item.address || '-'}</span>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="flex justify-end gap-5 pt-2 mt-3 border-t border-slate-100 text-sm">
+                      <button onclick="editStudent('${item.id}')" class="text-slate-600 hover:text-indigo-600 font-medium flex items-center gap-1">
+                          <i class="fa-solid fa-pen-to-square text-xs"></i> Sửa
+                      </button>
+                      <button onclick="deleteStudent('${item.id}')" class="text-rose-500 hover:text-rose-700 font-medium flex items-center gap-1">
+                          <i class="fa-solid fa-trash-can text-xs"></i> Xóa
+                      </button>
+                  </div>
+              `;
+              container.appendChild(card);
+          });
+      }
+
+      function updateStats(dataList) {
+          let total = dataList.length, mg = 0, th = 0, thcs = 0, other = 0;
+          dataList.forEach(s => {
+              const age = calculateAge(s.birthDate);
+              const block = getSchoolBlock(age, s.className);
+              if (block.code === 'MG') mg++;
+              else if (block.code === 'TH') th++;
+              else if (block.code === 'THCS') thcs++;
+              else other++;
+          });
+          document.getElementById('stat-total').innerText = total;
+          document.getElementById('stat-mg').innerText = mg;
+          document.getElementById('stat-th').innerText = th;
+          document.getElementById('stat-thcs').innerText = thcs;
+          document.getElementById('stat-other').innerText = other;
+      }
+
+      function openModal(isEdit = false) {
+          document.getElementById('modalTitle').innerText = isEdit ? "Sửa Thông Tin Học Sinh" : "Thêm Mới Thiếu Niên Nhi Đồng";
+          document.getElementById('studentModal').classList.remove('hidden');
+          document.getElementById('studentForm').scrollTop = 0;
+      }
+
+      function closeModal() {
+          document.getElementById('studentForm').reset();
+          document.getElementById('studentId').value = '';
+          document.getElementById('studentModal').classList.add('hidden');
+      }
+
+      function saveStudent(e) {
+          e.preventDefault();
+          const id = document.getElementById('studentId').value;
+          const newStudent = {
+              id: id || 'id_' + Date.now(),
+              fullName: document.getElementById('fullName').value.trim(),
+              birthDate: document.getElementById('birthDate').value,
+              gender: document.getElementById('gender').value,
+              address: document.getElementById('address').value,
+              className: document.getElementById('className').value.trim(),
+              fatherName: document.getElementById('fatherName').value.trim(),
+              motherName: document.getElementById('motherName').value.trim(),
+              parentPhone: document.getElementById('parentPhone').value.trim()
+          };
+
+          if (id) {
+              const index = students.findIndex(s => s.id === id);
+              if (index !== -1) students[index] = newStudent;
+          } else {
+              students.push(newStudent);
+          }
+
+          saveDataToStorage();
+          closeModal();
+          renderTable();
+      }
+
+      function editStudent(id) {
+          const student = students.find(s => s.id === id);
+          if (!student) return;
+
+          document.getElementById('studentId').value = student.id;
+          document.getElementById('fullName').value = student.fullName || '';
+          document.getElementById('birthDate').value = student.birthDate || '';
+          document.getElementById('gender').value = student.gender || 'Nam';
+          document.getElementById('address').value = student.address || 'Thôn Sấm 1';
+          document.getElementById('className').value = student.className || '';
+          document.getElementById('fatherName').value = student.fatherName || '';
+          document.getElementById('motherName').value = student.motherName || '';
+          document.getElementById('parentPhone').value = student.parentPhone || '';
+
+          openModal(true);
+      }
+
+      function deleteStudent(id) {
+          if (confirm("Bạn có chắc chắn muốn xóa thông tin này không?")) {
+              students = students.filter(s => s.id !== id);
+              saveDataToStorage();
+              renderTable();
+          }
+      }
+
+      function clearAllData() {
+          if (confirm("CẢNH BÁO: Hành động này sẽ xóa toàn bộ danh sách hiện tại. Bạn có chắc không?")) {
+              students = [];
+              saveDataToStorage();
+              renderTable();
+          }
+      }
+
+      function saveDataToStorage() {
+          localStorage.setItem('TNND_BANSAM_DATA', JSON.stringify(students));
+      }
+
+      function importExcel(e) {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+              const data = new Uint8Array(evt.target.result);
+              const workbook = XLSX.read(data, { type: 'array' });
+              parseAndSaveExcelData(workbook);
+              alert(`Đã nhập thành công danh sách từ file Excel!`);
+              document.getElementById('excelFileInput').value = '';
+          };
+          reader.readAsArrayBuffer(file);
+      }
+
+      function normalizeAddress(val) {
+          if (!val) return 'Thôn Sấm 1';
+          let str = String(val).trim();
+          if (/bãi cả/i.test(str)) return 'Thôn Bãi Cả';
+          if (/sấm 1/i.test(str)) return 'Thôn Sấm 1';
+          if (/sấm 2/i.test(str)) return 'Thôn Sấm 2';
+          if (/sấm 3/i.test(str)) return 'Thôn Sấm 3';
+          return str;
+      }
+
+      function parseExcelDate(val) {
+          if (!val) return '2015-01-01';
+          if (typeof val === 'number') {
+              const date = XLSX.SSF.parse_date_code(val);
+              return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
+          }
+          let str = String(val).trim();
+          let parts = str.split('/');
+          if (parts.length === 3) {
+              let day = parts[0].padStart(2, '0');
+              let month = parts[1].padStart(2, '0');
+              let year = parts[2];
+              return `${year}-${month}-${day}`;
+          }
+          return str;
+      }
+
+      async function exportExcel() {
+          const filteredStudents = getFilteredStudents();
+
+          if (filteredStudents.length === 0) {
+              alert("Không có dữ liệu phù hợp với bộ lọc hiện tại để xuất!");
+              return;
+          }
+
+          const workbook = new ExcelJS.Workbook();
+          const worksheet = workbook.addWorksheet("DS_TNND_BANSAM");
+
+          worksheet.addRow(["ĐOÀN TNCS HỒ CHÍ MINH"]);
+          worksheet.addRow(["CHI ĐOÀN BẢN SẤM"]);
+          worksheet.addRow(["DANH SÁCH THIẾU NIÊN NHI ĐỒNG BẢN SẤM"]);
+          worksheet.addRow([]); 
+
+          worksheet.addRow([
+              "STT", "Họ và tên", "Ngày sinh", "Giới tính", "Địa chỉ", "Lớp", "Họ tên Bố", "Họ tên Mẹ", "SĐT PH"
+          ]);
+
+          filteredStudents.forEach((s, idx) => {
+              worksheet.addRow([
+                  idx + 1,
+                  s.fullName || '',
+                  formatDateDisplay(s.birthDate),
+                  s.gender || '',
+                  s.address || '',
+                  s.className || '',
+                  s.fatherName || '',
+                  s.motherName || '',
+                  s.parentPhone || ''
+              ]);
+          });
+
+          worksheet.mergeCells('A1:I1');
+          worksheet.mergeCells('A2:I2');
+          worksheet.mergeCells('A3:I3');
+
+          worksheet.eachRow((row, rowNumber) => {
+              row.height = rowNumber <= 3 ? 24 : 22;
+
+              row.eachCell((cell) => {
+                  cell.font = {
+                      name: 'Times New Roman',
+                      size: 14,
+                      bold: rowNumber <= 3 || rowNumber === 5
+                  };
+
+                  if (rowNumber <= 3) {
+                      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                  } else if (rowNumber >= 5) {
+                      cell.border = {
+                          top: { style: 'thin' },
+                          left: { style: 'thin' },
+                          bottom: { style: 'thin' },
+                          right: { style: 'thin' }
+                      };
+
+                      cell.alignment = { 
+                          vertical: 'middle', 
+                          horizontal: rowNumber === 5 ? 'center' : 'left',
+                          wrapText: true
+                      };
+                  }
+              });
+          });
+
+          worksheet.columns.forEach((column) => {
+              let maxLen = 0;
+
+              column.eachCell({ includeEmpty: true }, (cell, rowNumber) => {
+                  if (rowNumber >= 5 && cell.value !== null && cell.value !== undefined) {
+                      const str = String(cell.value);
+                      
+                      let width = 0;
+                      for (let i = 0; i < str.length; i++) {
+                          const code = str.charCodeAt(i);
+                          if (code > 128 || (code >= 65 && code <= 90)) {
+                              width += 1.45;
+                          } else {
+                              width += 1.1;
+                          }
+                      }
+
+                      if (width > maxLen) {
+                          maxLen = width;
+                      }
+                  }
+              });
+
+              const calculatedWidth = Math.ceil(maxLen * 1.15) + 6;
+              column.width = Math.min(Math.max(calculatedWidth, 12), 50);
+          });
+
+          const buffer = await workbook.xlsx.writeBuffer();
+          const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+          saveAs(blob, `DS_TNND_BANSAM_DALOC_${new Date().getFullYear()}.xlsx`);
+      }
+  </script>
+</body>
+</html>
